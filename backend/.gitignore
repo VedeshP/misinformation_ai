@@ -1,0 +1,7 @@
+# Environment
+.genai/
+.env
+
+# Python cache
+__pycache__/
+*.pyc
