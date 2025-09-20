@@ -1,0 +1,18 @@
+@use 'sass:color';
+@use '@/styles/variables' as *;
+
+@mixin card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+}
+
+@mixin focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  &:focus-visible {
+    box-shadow: 0 0 0 3px color.scale($color-accent, $lightness: 20%);
+  }
+}
+
+

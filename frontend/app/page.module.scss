@@ -1,0 +1,32 @@
+@use '@/styles/variables' as *;
+
+.main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: $space-4;
+  padding: $space-4;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sidebar {
+  @media (max-width: 900px) {
+    order: 2;
+  }
+}
+
+.chatArea {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+
