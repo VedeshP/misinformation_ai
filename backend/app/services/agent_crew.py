@@ -21,20 +21,12 @@ load_dotenv()
 # search_tool = DuckDuckGoSearchRun()
 search_tool = SerperDevTool()
 
-# Initialize the LLM
-# We use a temperature of 0.0 to ensure deterministic and factual outputs
-# llm = ChatGoogleGenerativeAI(
-#     model="gemini-pro",
-#     verbose=True,
-#     temperature=0.0,
-#     google_api_key=os.getenv("GOOGLE_API_KEY")
-# )
-
 
 """We will use the crew ai inbuilt llm class"""
 
 llm = LLM(
     model="gemini/gemini-2.5-flash",
+    # model="gemini/gemini-2.5-flash-lite",
     temperature=0.8,
 
     # safety_settings={
@@ -86,7 +78,7 @@ analyst = Agent(
 # Task 1: Research Task
 research_task = Task(
     description=(
-        "Investigate the following text: '{text_to_analyze}'. "
+        "Investigate the following text: '{claims_to_analyze}'. "
         "Your primary goal is to gather facts, data, and reports from a variety of credible sources. "
         "Identify the main claims made in the text. For each claim, find at least 2-3 sources that either "
         "support or refute it. List the key findings and the sources you used."
@@ -102,33 +94,17 @@ research_task = Task(
 # This task's prompt is CRITICAL. It tells the agent how to structure the final JSON.
 analysis_task = Task(
     description=(
-        "Analyze the research findings provided on the text: '{text_to_analyze}'. "
+        "Analyze the research findings provided on the text: '{claims_to_analyze}'. "
         "Your job is to produce a final, structured JSON report. Deconstruct the original text into individual claims. "
         "For each claim, provide a verdict, a summary of the evidence, and the sources. "
         "Then, determine an 'overall_verdict' for the entire text. "
         "Crucially, you must also provide a 'confidence_score' (from 0.0 to 1.0) based on the quality and agreement of the sources. "
         "Explain your reasoning for the overall verdict and the confidence score."
     ),
-    # expected_output=(
-    #     "A single, valid JSON object following this exact schema: \n"
-    #     "{{\n"
-    #     "  \"original_text\": \"The original text that was analyzed\",\n"
-    #     "  \"overall_verdict\": \"One of [Accurate, Misleading, False, Unsubstantiated, Contested]\",\n"
-    #     "  \"confidence_score\": 0.95,\n"
-    #     "  \"analysis_summary\": \"A high-level summary of the findings.\",\n"
-    #     "  \"reasoning\": \"Step-by-step reasoning for the verdict and score, citing source quality.\",\n"
-    #     "  \"claims\": [\n"
-    #     "    {{\n"
-    #     "      \"claim_text\": \"The specific claim being analyzed.\",\n"
-    #     "      \"verdict\": \"One of [Accurate, Misleading, False, Unsubstantiated, Contested]\",\n"
-    #     "      \"evidence\": \"Summary of the evidence for this claim.\",\n"
-    #     "      \"sources\": [{\"url\": \"http://example.com\", \"title\": \"Example Title\"}]\n"
-    #     "    }}\n"
-    #     "  ]\n"
-    #     "}}"
-    # ),
-    expected_output=(
-        "A single, valid JSON object that strictly follows the provided schema."
+     expected_output=(
+        "Your final output MUST BE a single, clean JSON object and nothing else. "
+        "Do not include any introductory text, explanations, or markdown formatting like ```json. "
+        "The JSON object must strictly conform to the AnalysisResponse Pydantic model, ensuring the 'claims' list is populated correctly based on your research."
     ),
     agent=analyst,
     output_pydantic=AnalysisResponse
@@ -144,13 +120,20 @@ crew = Crew(
     verbose=True
 )
 
-def run_analysis_crew(text_to_analyze: str) -> str:
+def run_analysis_crew(claims_to_analyze: str) -> str:
     """
     Kicks off the crew to analyze the text and returns the raw JSON string.
     """
-    inputs = {'text_to_analyze': text_to_analyze}
+    inputs = {'claims_to_analyze': claims_to_analyze}
     result = crew.kickoff(inputs=inputs)
     # return result
     # return result.tasks_output[-1].pydantic
     # return result.raw
+
+    """Running some tests to check the json output"""
+    import json
+    json_output = result.pydantic.model_dump_json()
+    with open("test.json", 'w') as test:
+        json.dump(json_output, test)
+
     return result.pydantic
